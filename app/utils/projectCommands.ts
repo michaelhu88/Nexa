@@ -77,7 +77,7 @@ export function createCommandsMessage(commands: ProjectCommands): Message | null
 
   if (commands.startCommand) {
     commandString += `
-<boltAction type="start">${commands.startCommand}</boltAction>
+<nexaAction type="start">${commands.startCommand}</nexaAction>
 `;
   }
 
@@ -85,17 +85,17 @@ export function createCommandsMessage(commands: ProjectCommands): Message | null
     role: 'assistant',
     content: `
 ${commands.followupMessage ? `\n\n${commands.followupMessage}` : ''}
-<boltArtifact id="project-setup" title="Project Setup">
+<nexaArtifact id="project-setup" title="Project Setup">
 ${commandString}
-</boltArtifact>`,
+</nexaArtifact>`,
     id: generateId(),
     createdAt: new Date(),
   };
 }
 
-export function escapeBoltArtifactTags(input: string) {
-  // Regular expression to match boltArtifact tags and their content
-  const regex = /(<boltArtifact[^>]*>)([\s\S]*?)(<\/boltArtifact>)/g;
+export function escapeNexaArtifactTags(input: string) {
+  // Regular expression to match nexaArtifact tags and their content
+  const regex = /(<nexaArtifact[^>]*>)([\s\S]*?)(<\/nexaArtifact>)/g;
 
   return input.replace(regex, (match, openTag, content, closeTag) => {
     // Escape the opening tag
@@ -109,9 +109,9 @@ export function escapeBoltArtifactTags(input: string) {
   });
 }
 
-export function escapeBoltAActionTags(input: string) {
-  // Regular expression to match boltArtifact tags and their content
-  const regex = /(<boltAction[^>]*>)([\s\S]*?)(<\/boltAction>)/g;
+export function escapeNexaActionTags(input: string) {
+  // Regular expression to match nexaAction tags and their content
+  const regex = /(<nexaAction[^>]*>)([\s\S]*?)(<\/nexaAction>)/g;
 
   return input.replace(regex, (match, openTag, content, closeTag) => {
     // Escape the opening tag
@@ -125,8 +125,8 @@ export function escapeBoltAActionTags(input: string) {
   });
 }
 
-export function escapeBoltTags(input: string) {
-  return escapeBoltArtifactTags(escapeBoltAActionTags(input));
+export function escapeNexaTags(input: string) {
+  return escapeNexaArtifactTags(escapeNexaActionTags(input));
 }
 
 // We have this seperate function to simplify the restore snapshot process in to one single artifact.
@@ -145,7 +145,7 @@ export function createCommandActionsString(commands: ProjectCommands): string {
 
   if (commands.startCommand) {
     commandString += `
-<boltAction type="start">${commands.startCommand}</boltAction>
+<nexaAction type="start">${commands.startCommand}</nexaAction>
 `;
   }
 

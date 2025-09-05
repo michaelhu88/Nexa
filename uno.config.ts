@@ -5,7 +5,7 @@ import { defineConfig, presetIcons, presetUno, transformerDirectives } from 'uno
 
 const iconPaths = globSync('./icons/*.svg');
 
-const collectionName = 'bolt';
+const collectionName = 'nexa';
 
 const customIconCollection = iconPaths.reduce(
   (acc, iconPath) => {
@@ -98,11 +98,11 @@ const COLOR_PRIMITIVES = {
 };
 
 export default defineConfig({
-  safelist: [...Object.keys(customIconCollection[collectionName] || {}).map((x) => `i-bolt:${x}`)],
+  safelist: [...Object.keys(customIconCollection[collectionName] || {}).map((x) => `i-nexa:${x}`)],
   shortcuts: {
-    'bolt-ease-cubic-bezier': 'ease-[cubic-bezier(0.4,0,0.2,1)]',
-    'transition-theme': 'transition-[background-color,border-color,color] duration-150 bolt-ease-cubic-bezier',
-    kdb: 'bg-bolt-elements-code-background text-bolt-elements-code-text py-1 px-1.5 rounded-md',
+    'nexa-ease-cubic-bezier': 'ease-[cubic-bezier(0.4,0,0.2,1)]',
+    'transition-theme': 'transition-[background-color,border-color,color] duration-150 nexa-ease-cubic-bezier',
+    kdb: 'bg-nexa-elements-code-background text-nexa-elements-code-text py-1 px-1.5 rounded-md',
     'max-w-chat': 'max-w-[var(--chat-max-width)]',
   },
   rules: [
@@ -115,115 +115,115 @@ export default defineConfig({
   theme: {
     colors: {
       ...COLOR_PRIMITIVES,
-      bolt: {
+      nexa: {
         elements: {
-          borderColor: 'var(--bolt-elements-borderColor)',
-          borderColorActive: 'var(--bolt-elements-borderColorActive)',
+          borderColor: 'var(--nexa-elements-borderColor)',
+          borderColorActive: 'var(--nexa-elements-borderColorActive)',
           background: {
             depth: {
-              1: 'var(--bolt-elements-bg-depth-1)',
-              2: 'var(--bolt-elements-bg-depth-2)',
-              3: 'var(--bolt-elements-bg-depth-3)',
-              4: 'var(--bolt-elements-bg-depth-4)',
+              1: 'var(--nexa-elements-bg-depth-1)',
+              2: 'var(--nexa-elements-bg-depth-2)',
+              3: 'var(--nexa-elements-bg-depth-3)',
+              4: 'var(--nexa-elements-bg-depth-4)',
             },
           },
-          textPrimary: 'var(--bolt-elements-textPrimary)',
-          textSecondary: 'var(--bolt-elements-textSecondary)',
-          textTertiary: 'var(--bolt-elements-textTertiary)',
+          textPrimary: 'var(--nexa-elements-textPrimary)',
+          textSecondary: 'var(--nexa-elements-textSecondary)',
+          textTertiary: 'var(--nexa-elements-textTertiary)',
           code: {
-            background: 'var(--bolt-elements-code-background)',
-            text: 'var(--bolt-elements-code-text)',
+            background: 'var(--nexa-elements-code-background)',
+            text: 'var(--nexa-elements-code-text)',
           },
           button: {
             primary: {
-              background: 'var(--bolt-elements-button-primary-background)',
-              backgroundHover: 'var(--bolt-elements-button-primary-backgroundHover)',
-              text: 'var(--bolt-elements-button-primary-text)',
+              background: 'var(--nexa-elements-button-primary-background)',
+              backgroundHover: 'var(--nexa-elements-button-primary-backgroundHover)',
+              text: 'var(--nexa-elements-button-primary-text)',
             },
             secondary: {
-              background: 'var(--bolt-elements-button-secondary-background)',
-              backgroundHover: 'var(--bolt-elements-button-secondary-backgroundHover)',
-              text: 'var(--bolt-elements-button-secondary-text)',
+              background: 'var(--nexa-elements-button-secondary-background)',
+              backgroundHover: 'var(--nexa-elements-button-secondary-backgroundHover)',
+              text: 'var(--nexa-elements-button-secondary-text)',
             },
             danger: {
-              background: 'var(--bolt-elements-button-danger-background)',
-              backgroundHover: 'var(--bolt-elements-button-danger-backgroundHover)',
-              text: 'var(--bolt-elements-button-danger-text)',
+              background: 'var(--nexa-elements-button-danger-background)',
+              backgroundHover: 'var(--nexa-elements-button-danger-backgroundHover)',
+              text: 'var(--nexa-elements-button-danger-text)',
             },
           },
           item: {
-            contentDefault: 'var(--bolt-elements-item-contentDefault)',
-            contentActive: 'var(--bolt-elements-item-contentActive)',
-            contentAccent: 'var(--bolt-elements-item-contentAccent)',
-            contentDanger: 'var(--bolt-elements-item-contentDanger)',
-            backgroundDefault: 'var(--bolt-elements-item-backgroundDefault)',
-            backgroundActive: 'var(--bolt-elements-item-backgroundActive)',
-            backgroundAccent: 'var(--bolt-elements-item-backgroundAccent)',
-            backgroundDanger: 'var(--bolt-elements-item-backgroundDanger)',
+            contentDefault: 'var(--nexa-elements-item-contentDefault)',
+            contentActive: 'var(--nexa-elements-item-contentActive)',
+            contentAccent: 'var(--nexa-elements-item-contentAccent)',
+            contentDanger: 'var(--nexa-elements-item-contentDanger)',
+            backgroundDefault: 'var(--nexa-elements-item-backgroundDefault)',
+            backgroundActive: 'var(--nexa-elements-item-backgroundActive)',
+            backgroundAccent: 'var(--nexa-elements-item-backgroundAccent)',
+            backgroundDanger: 'var(--nexa-elements-item-backgroundDanger)',
           },
           actions: {
-            background: 'var(--bolt-elements-actions-background)',
+            background: 'var(--nexa-elements-actions-background)',
             code: {
-              background: 'var(--bolt-elements-actions-code-background)',
+              background: 'var(--nexa-elements-actions-code-background)',
             },
           },
           artifacts: {
-            background: 'var(--bolt-elements-artifacts-background)',
-            backgroundHover: 'var(--bolt-elements-artifacts-backgroundHover)',
-            borderColor: 'var(--bolt-elements-artifacts-borderColor)',
+            background: 'var(--nexa-elements-artifacts-background)',
+            backgroundHover: 'var(--nexa-elements-artifacts-backgroundHover)',
+            borderColor: 'var(--nexa-elements-artifacts-borderColor)',
             inlineCode: {
-              background: 'var(--bolt-elements-artifacts-inlineCode-background)',
-              text: 'var(--bolt-elements-artifacts-inlineCode-text)',
+              background: 'var(--nexa-elements-artifacts-inlineCode-background)',
+              text: 'var(--nexa-elements-artifacts-inlineCode-text)',
             },
           },
           messages: {
-            background: 'var(--bolt-elements-messages-background)',
-            linkColor: 'var(--bolt-elements-messages-linkColor)',
+            background: 'var(--nexa-elements-messages-background)',
+            linkColor: 'var(--nexa-elements-messages-linkColor)',
             code: {
-              background: 'var(--bolt-elements-messages-code-background)',
+              background: 'var(--nexa-elements-messages-code-background)',
             },
             inlineCode: {
-              background: 'var(--bolt-elements-messages-inlineCode-background)',
-              text: 'var(--bolt-elements-messages-inlineCode-text)',
+              background: 'var(--nexa-elements-messages-inlineCode-background)',
+              text: 'var(--nexa-elements-messages-inlineCode-text)',
             },
           },
           icon: {
-            success: 'var(--bolt-elements-icon-success)',
-            error: 'var(--bolt-elements-icon-error)',
-            primary: 'var(--bolt-elements-icon-primary)',
-            secondary: 'var(--bolt-elements-icon-secondary)',
-            tertiary: 'var(--bolt-elements-icon-tertiary)',
+            success: 'var(--nexa-elements-icon-success)',
+            error: 'var(--nexa-elements-icon-error)',
+            primary: 'var(--nexa-elements-icon-primary)',
+            secondary: 'var(--nexa-elements-icon-secondary)',
+            tertiary: 'var(--nexa-elements-icon-tertiary)',
           },
           preview: {
             addressBar: {
-              background: 'var(--bolt-elements-preview-addressBar-background)',
-              backgroundHover: 'var(--bolt-elements-preview-addressBar-backgroundHover)',
-              backgroundActive: 'var(--bolt-elements-preview-addressBar-backgroundActive)',
-              text: 'var(--bolt-elements-preview-addressBar-text)',
-              textActive: 'var(--bolt-elements-preview-addressBar-textActive)',
+              background: 'var(--nexa-elements-preview-addressBar-background)',
+              backgroundHover: 'var(--nexa-elements-preview-addressBar-backgroundHover)',
+              backgroundActive: 'var(--nexa-elements-preview-addressBar-backgroundActive)',
+              text: 'var(--nexa-elements-preview-addressBar-text)',
+              textActive: 'var(--nexa-elements-preview-addressBar-textActive)',
             },
           },
           terminals: {
-            background: 'var(--bolt-elements-terminals-background)',
-            buttonBackground: 'var(--bolt-elements-terminals-buttonBackground)',
+            background: 'var(--nexa-elements-terminals-background)',
+            buttonBackground: 'var(--nexa-elements-terminals-buttonBackground)',
           },
-          dividerColor: 'var(--bolt-elements-dividerColor)',
+          dividerColor: 'var(--nexa-elements-dividerColor)',
           loader: {
-            background: 'var(--bolt-elements-loader-background)',
-            progress: 'var(--bolt-elements-loader-progress)',
+            background: 'var(--nexa-elements-loader-background)',
+            progress: 'var(--nexa-elements-loader-progress)',
           },
           prompt: {
-            background: 'var(--bolt-elements-prompt-background)',
+            background: 'var(--nexa-elements-prompt-background)',
           },
           sidebar: {
-            dropdownShadow: 'var(--bolt-elements-sidebar-dropdownShadow)',
-            buttonBackgroundDefault: 'var(--bolt-elements-sidebar-buttonBackgroundDefault)',
-            buttonBackgroundHover: 'var(--bolt-elements-sidebar-buttonBackgroundHover)',
-            buttonText: 'var(--bolt-elements-sidebar-buttonText)',
+            dropdownShadow: 'var(--nexa-elements-sidebar-dropdownShadow)',
+            buttonBackgroundDefault: 'var(--nexa-elements-sidebar-buttonBackgroundDefault)',
+            buttonBackgroundHover: 'var(--nexa-elements-sidebar-buttonBackgroundHover)',
+            buttonText: 'var(--nexa-elements-sidebar-buttonText)',
           },
           cta: {
-            background: 'var(--bolt-elements-cta-background)',
-            text: 'var(--bolt-elements-cta-text)',
+            background: 'var(--nexa-elements-cta-background)',
+            text: 'var(--nexa-elements-cta-text)',
           },
         },
       },

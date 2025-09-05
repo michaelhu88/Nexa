@@ -158,11 +158,11 @@ export async function getTemplates(templateName: string, title?: string) {
      */
   }
 
-  // exclude    .bolt
-  filteredFiles = filteredFiles.filter((x) => x.path.startsWith('.bolt') == false);
+  // exclude    .nexa
+  filteredFiles = filteredFiles.filter((x) => x.path.startsWith('.nexa') == false);
 
-  // check for ignore file in .bolt folder
-  const templateIgnoreFile = files.find((x) => x.path.startsWith('.bolt') && x.name == 'ignore');
+  // check for ignore file in .nexa folder
+  const templateIgnoreFile = files.find((x) => x.path.startsWith('.nexa') && x.name == 'ignore');
 
   const filesToImport = {
     files: filteredFiles,
@@ -182,20 +182,20 @@ export async function getTemplates(templateName: string, title?: string) {
   }
 
   const assistantMessage = `
-Bolt is initializing your project with the required files using the ${template.name} template.
-<boltArtifact id="imported-files" title="${title || 'Create initial files'}" type="bundled">
+Nexa is initializing your project with the required files using the ${template.name} template.
+<nexaArtifact id="imported-files" title="${title || 'Create initial files'}" type="bundled">
 ${filesToImport.files
   .map(
     (file) =>
-      `<boltAction type="file" filePath="${file.path}">
+      `<nexaAction type="file" filePath="${file.path}">
 ${file.content}
-</boltAction>`,
+</nexaAction>`,
   )
   .join('\n')}
-</boltArtifact>
+</nexaArtifact>
 `;
   let userMessage = ``;
-  const templatePromptFile = files.filter((x) => x.path.startsWith('.bolt')).find((x) => x.name == 'prompt');
+  const templatePromptFile = files.filter((x) => x.path.startsWith('.nexa')).find((x) => x.name == 'prompt');
 
   if (templatePromptFile) {
     userMessage = `

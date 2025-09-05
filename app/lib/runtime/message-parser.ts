@@ -1,16 +1,16 @@
-import type { ActionType, BoltAction, BoltActionData, FileAction, ShellAction, SupabaseAction } from '~/types/actions';
-import type { BoltArtifactData } from '~/types/artifact';
+import type { ActionType, NexaAction, NexaActionData, FileAction, ShellAction, SupabaseAction } from '~/types/actions';
+import type { NexaArtifactData } from '~/types/artifact';
 import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
 
-const ARTIFACT_TAG_OPEN = '<boltArtifact';
-const ARTIFACT_TAG_CLOSE = '</boltArtifact>';
-const ARTIFACT_ACTION_TAG_OPEN = '<boltAction';
-const ARTIFACT_ACTION_TAG_CLOSE = '</boltAction>';
+const ARTIFACT_TAG_OPEN = '<nexaArtifact';
+const ARTIFACT_TAG_CLOSE = '</nexaArtifact>';
+const ARTIFACT_ACTION_TAG_OPEN = '<nexaAction';
+const ARTIFACT_ACTION_TAG_CLOSE = '</nexaAction>';
 
 const logger = createScopedLogger('MessageParser');
 
-export interface ArtifactCallbackData extends BoltArtifactData {
+export interface ArtifactCallbackData extends NexaArtifactData {
   messageId: string;
 }
 
@@ -18,7 +18,7 @@ export interface ActionCallbackData {
   artifactId: string;
   messageId: string;
   actionId: string;
-  action: BoltAction;
+  action: NexaAction;
 }
 
 export type ArtifactCallback = (data: ArtifactCallbackData) => void;
@@ -47,8 +47,8 @@ interface MessageState {
   position: number;
   insideArtifact: boolean;
   insideAction: boolean;
-  currentArtifact?: BoltArtifactData;
-  currentAction: BoltActionData;
+  currentArtifact?: NexaArtifactData;
+  currentAction: NexaActionData;
   actionId: number;
 }
 
@@ -133,7 +133,7 @@ export class StreamingMessageParser {
                */
               actionId: String(state.actionId - 1),
 
-              action: currentAction as BoltAction,
+              action: currentAction as NexaAction,
             });
 
             state.insideAction = false;
@@ -179,7 +179,7 @@ export class StreamingMessageParser {
                 artifactId: currentArtifact.id,
                 messageId,
                 actionId: String(state.actionId++),
-                action: state.currentAction as BoltAction,
+                action: state.currentAction as NexaAction,
               });
 
               i = actionEndIndex + 1;
@@ -236,7 +236,7 @@ export class StreamingMessageParser {
                 id: artifactId,
                 title: artifactTitle,
                 type,
-              } satisfies BoltArtifactData;
+              } satisfies NexaArtifactData;
 
               state.currentArtifact = currentArtifact;
 

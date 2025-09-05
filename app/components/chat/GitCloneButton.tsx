@@ -1,7 +1,7 @@
 import ignore from 'ignore';
 import { useGit } from '~/lib/hooks/useGit';
 import type { Message } from 'ai';
-import { detectProjectCommands, createCommandsMessage, escapeBoltTags } from '~/utils/projectCommands';
+import { detectProjectCommands, createCommandsMessage, escapeNexaTags } from '~/utils/projectCommands';
 import { generateId } from '~/utils/fileUtils';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
@@ -122,16 +122,16 @@ ${skippedFiles.map((f) => `- ${f}`).join('\n')}`
     : ''
 }
 
-<boltArtifact id="imported-files" title="Git Cloned Files" type="bundled">
+<nexaArtifact id="imported-files" title="Git Cloned Files" type="bundled">
 ${fileContents
   .map(
     (file) =>
-      `<boltAction type="file" filePath="${file.path}">
-${escapeBoltTags(file.content)}
-</boltAction>`,
+      `<nexaAction type="file" filePath="${file.path}">
+${escapeNexaTags(file.content)}
+</nexaAction>`,
   )
   .join('\n')}
-</boltArtifact>`,
+</nexaArtifact>`,
           id: generateId(),
           createdAt: new Date(),
         };
@@ -160,10 +160,10 @@ ${escapeBoltTags(file.content)}
         variant="default"
         size="lg"
         className={classNames(
-          'gap-2 bg-bolt-elements-background-depth-1',
-          'text-bolt-elements-textPrimary',
-          'hover:bg-bolt-elements-background-depth-2',
-          'border border-bolt-elements-borderColor',
+          'gap-2 bg-nexa-elements-background-depth-1',
+          'text-nexa-elements-textPrimary',
+          'hover:bg-nexa-elements-background-depth-2',
+          'border border-nexa-elements-borderColor',
           'h-10 px-4 py-2 min-w-[120px] justify-center',
           'transition-all duration-200 ease-in-out',
           className,

@@ -64,19 +64,19 @@ export const AssistantMessage = memo(({ content, annotations, messageId, onRewin
   return (
     <div className="overflow-hidden w-full">
       <>
-        <div className=" flex gap-2 items-center text-sm text-bolt-elements-textSecondary mb-2">
+        <div className=" flex gap-2 items-center text-sm text-nexa-elements-textSecondary mb-2">
           {(codeContext || chatSummary) && (
             <Popover side="right" align="start" trigger={<div className="i-ph:info" />}>
               {chatSummary && (
                 <div className="max-w-chat">
                   <div className="summary max-h-96 flex flex-col">
-                    <h2 className="border border-bolt-elements-borderColor rounded-md p4">Summary</h2>
+                    <h2 className="border border-nexa-elements-borderColor rounded-md p4">Summary</h2>
                     <div style={{ zoom: 0.7 }} className="overflow-y-auto m4">
                       <Markdown>{chatSummary}</Markdown>
                     </div>
                   </div>
                   {codeContext && (
-                    <div className="code-context flex flex-col p4 border border-bolt-elements-borderColor rounded-md">
+                    <div className="code-context flex flex-col p4 border border-nexa-elements-borderColor rounded-md">
                       <h2>Context</h2>
                       <div className="flex gap-4 mt-4 bolt" style={{ zoom: 0.6 }}>
                         {codeContext.map((x) => {
@@ -84,7 +84,7 @@ export const AssistantMessage = memo(({ content, annotations, messageId, onRewin
                           return (
                             <Fragment key={normalized}>
                               <code
-                                className="bg-bolt-elements-artifacts-inlineCode-background text-bolt-elements-artifacts-inlineCode-text px-1.5 py-1 rounded-md text-bolt-elements-item-contentAccent hover:underline cursor-pointer"
+                                className="bg-nexa-elements-artifacts-inlineCode-background text-nexa-elements-artifacts-inlineCode-text px-1.5 py-1 rounded-md text-nexa-elements-item-contentAccent hover:underline cursor-pointer"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -117,7 +117,7 @@ export const AssistantMessage = memo(({ content, annotations, messageId, onRewin
                     <button
                       onClick={() => onRewind(messageId)}
                       key="i-ph:arrow-u-up-left"
-                      className="i-ph:arrow-u-up-left text-xl text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-colors"
+                      className="i-ph:arrow-u-up-left text-xl text-nexa-elements-textSecondary hover:text-nexa-elements-textPrimary transition-colors"
                     />
                   </WithTooltip>
                 )}
@@ -126,7 +126,7 @@ export const AssistantMessage = memo(({ content, annotations, messageId, onRewin
                     <button
                       onClick={() => onFork(messageId)}
                       key="i-ph:git-fork"
-                      className="i-ph:git-fork text-xl text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-colors"
+                      className="i-ph:git-fork text-xl text-nexa-elements-textSecondary hover:text-nexa-elements-textPrimary transition-colors"
                     />
                   </WithTooltip>
                 )}
