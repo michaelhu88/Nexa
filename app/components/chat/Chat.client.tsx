@@ -9,6 +9,7 @@ import { useAnimate } from 'framer-motion';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { cssTransition, toast, ToastContainer } from 'react-toastify';
 import { useMessageParser, usePromptEnhancer, useShortcuts } from '~/lib/hooks';
+import { useEnterpriseAutomation } from '~/lib/hooks/useEnterpriseAutomation';
 import { description, useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
@@ -22,7 +23,6 @@ import { useSettings } from '~/lib/hooks/useSettings';
 import type { ProviderInfo } from '~/types/model';
 import { useSearchParams } from '@remix-run/react';
 import { createSampler } from '~/utils/sampler';
-import { getTemplates, selectStarterTemplate } from '~/utils/selectStarterTemplate';
 import { logStore } from '~/lib/stores/logs';
 import { streamingState } from '~/lib/stores/streaming';
 import { filesToArtifacts } from '~/utils/fileUtils';
@@ -131,7 +131,7 @@ export const ChatImpl = memo(
       (project) => project.id === supabaseConn.selectedProjectId,
     );
     const supabaseAlert = useStore(workbenchStore.supabaseAlert);
-    const { activeProviders, promptId, autoSelectTemplate, contextOptimizationEnabled } = useSettings();
+    const { activeProviders, promptId, contextOptimizationEnabled } = useSettings();
 
     const [model, setModel] = useState(() => {
       const savedModel = Cookies.get('selectedModel');
@@ -233,6 +233,26 @@ export const ChatImpl = memo(
     const { enhancingPrompt, promptEnhanced, enhancePrompt, resetEnhancer } = usePromptEnhancer();
     const { parsedMessages, parseMessages } = useMessageParser();
 
+    // Enterprise automation detection and loading
+    useEnterpriseAutomation({
+      messages,
+      onTemplateLoad: (templateMessage) => {
+        // Append the template message to chat
+        logger.info('🎯 CHAT: Enterprise template message received for loading', {
+          messageId: templateMessage.id,
+          role: templateMessage.role,
+          contentLength: templateMessage.content.length,
+          hasNexaArtifact: templateMessage.content.includes('<nexaArtifact'),
+          hasNexaAction: templateMessage.content.includes('<nexaAction'),
+        });
+
+        append(templateMessage);
+
+        logger.info('✅ CHAT: Template message appended to chat - should trigger message parser');
+      },
+      enabled: true,
+    });
+
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
 
     useEffect(() => {
@@ -318,69 +338,76 @@ export const ChatImpl = memo(
       if (!chatStarted) {
         setFakeLoading(true);
 
-        if (autoSelectTemplate) {
-          const { template, title } = await selectStarterTemplate({
-            message: finalMessageContent,
-            model,
-            provider,
-          });
-
-          if (template !== 'blank') {
-            const temResp = await getTemplates(template, title).catch((e) => {
-              if (e.message.includes('rate limit')) {
-                toast.warning('Rate limit exceeded. Skipping starter template\n Continuing with blank template');
-              } else {
-                toast.warning('Failed to import starter template\n Continuing with blank template');
-              }
-
-              return null;
-            });
-
-            if (temResp) {
-              const { assistantMessage, userMessage } = temResp;
-              setMessages([
-                {
-                  id: `1-${new Date().getTime()}`,
-                  role: 'user',
-                  content: [
-                    {
-                      type: 'text',
-                      text: `[Model: ${model}]\n\n[Provider: ${provider.name}]\n\n${finalMessageContent}`,
-                    },
-                    ...imageDataList.map((imageData) => ({
-                      type: 'image',
-                      image: imageData,
-                    })),
-                  ] as any,
-                },
-                {
-                  id: `2-${new Date().getTime()}`,
-                  role: 'assistant',
-                  content: assistantMessage,
-                },
-                {
-                  id: `3-${new Date().getTime()}`,
-                  role: 'user',
-                  content: `[Model: ${model}]\n\n[Provider: ${provider.name}]\n\n${userMessage}`,
-                  annotations: ['hidden'],
-                },
-              ]);
-              reload();
-              setInput('');
-              Cookies.remove(PROMPT_COOKIE_KEY);
-
-              setUploadedFiles([]);
-              setImageDataList([]);
-
-              resetEnhancer();
-
-              textareaRef.current?.blur();
-              setFakeLoading(false);
-
-              return;
-            }
-          }
-        }
+        /*
+         * TEMPORARILY DISABLED: Auto-select template feature
+         * This is disabled to allow clean debugging of enterprise automation zip loading
+         * TODO: Re-enable after enterprise automation debugging is complete
+         */
+        /*
+         *if (autoSelectTemplate) {
+         *  const { template, title } = await selectStarterTemplate({
+         *    message: finalMessageContent,
+         *    model,
+         *    provider,
+         *  });
+         *
+         *  if (template !== 'blank') {
+         *    const temResp = await getTemplates(template, title).catch((e) => {
+         *      if (e.message.includes('rate limit')) {
+         *        toast.warning('Rate limit exceeded. Skipping starter template\n Continuing with blank template');
+         *      } else {
+         *        toast.warning('Failed to import starter template\n Continuing with blank template');
+         *      }
+         *
+         *      return null;
+         *    });
+         *
+         *    if (temResp) {
+         *      const { assistantMessage, userMessage } = temResp;
+         *      setMessages([
+         *        {
+         *          id: `1-${new Date().getTime()}`,
+         *          role: 'user',
+         *          content: [
+         *            {
+         *              type: 'text',
+         *              text: `[Model: ${model}]\n\n[Provider: ${provider.name}]\n\n${finalMessageContent}`,
+         *            },
+         *            ...imageDataList.map((imageData) => ({
+         *              type: 'image',
+         *              image: imageData,
+         *            })),
+         *          ] as any,
+         *        },
+         *        {
+         *          id: `2-${new Date().getTime()}`,
+         *          role: 'assistant',
+         *          content: assistantMessage,
+         *        },
+         *        {
+         *          id: `3-${new Date().getTime()}`,
+         *          role: 'user',
+         *          content: `[Model: ${model}]\n\n[Provider: ${provider.name}]\n\n${userMessage}`,
+         *          annotations: ['hidden'],
+         *        },
+         *      ]);
+         *      reload();
+         *      setInput('');
+         *      Cookies.remove(PROMPT_COOKIE_KEY);
+         *
+         *      setUploadedFiles([]);
+         *      setImageDataList([]);
+         *
+         *      resetEnhancer();
+         *
+         *      textareaRef.current?.blur();
+         *      setFakeLoading(false);
+         *
+         *      return;
+         *    }
+         *  }
+         *}
+         */
 
         // If autoSelectTemplate is disabled or template selection failed, proceed with normal message
         setMessages([

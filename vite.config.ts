@@ -91,6 +91,15 @@ export default defineConfig((config) => {
       __PKG_OPTIONAL_DEPENDENCIES: JSON.stringify(pkg.optionalDependencies),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     },
+    server: {
+      proxy: {
+        '/storage': {
+          target: process.env.VITE_NOCOBASE_API_URL || 'http://127.0.0.1:13000',
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    },
     build: {
       target: 'esnext',
       rollupOptions: {

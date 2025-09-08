@@ -9,10 +9,17 @@ const logger = createScopedLogger('useMessageParser');
 const messageParser = new StreamingMessageParser({
   callbacks: {
     onArtifactOpen: (data) => {
-      logger.trace('onArtifactOpen', data);
+      logger.info('🎯 WORKBENCH TRIGGER: onArtifactOpen called', {
+        messageId: data.messageId,
+        artifactId: data.id,
+        title: data.title,
+        type: data.type,
+      });
 
       workbenchStore.showWorkbench.set(true);
       workbenchStore.addArtifact(data);
+
+      logger.info('✅ Workbench opened and artifact added');
     },
     onArtifactClose: (data) => {
       logger.trace('onArtifactClose');

@@ -91,11 +91,18 @@ export const apiClient = {
 
   /**
    * Download a zip file from NocoBase by direct URL
+   * Uses Vite proxy for /storage paths to avoid CORS issues in development
    */
   async downloadZipByUrl(url: string): Promise<ArrayBuffer> {
     const token = authStore.get().token;
 
-    const response = await fetch(buildUrl(url), {
+    /*
+     * For storage URLs, use the proxy path directly to avoid CORS
+     * This transforms '/storage/uploads/file.zip' to be served via Vite proxy
+     */
+    const fetchUrl = url.startsWith('/storage') ? url : buildUrl(url);
+
+    const response = await fetch(fetchUrl, {
       method: 'GET',
       headers: {
         ...getAuthHeaders(token || undefined),

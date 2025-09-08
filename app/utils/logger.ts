@@ -44,6 +44,54 @@ function setLevel(level: DebugLevel) {
   currentLevel = level;
 }
 
+function serializeValue(value: any): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  if (value === null) {
+    return 'null';
+  }
+
+  if (value === undefined) {
+    return 'undefined';
+  }
+
+  if (value instanceof Error) {
+    return `Error: ${value.message}${value.stack ? '\n' + value.stack : ''}`;
+  }
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    // Handle circular references and other JSON.stringify errors
+    try {
+      return JSON.stringify(
+        value,
+        (key, val) => {
+          if (typeof val === 'object' && val !== null) {
+            // Simple circular reference detection
+            if (val.constructor && val.constructor.name) {
+              return `[${val.constructor.name}]`;
+            }
+
+            return '[Object]';
+          }
+
+          return val;
+        },
+        2,
+      );
+    } catch {
+      return `[Complex Object - ${Object.prototype.toString.call(value)}]`;
+    }
+  }
+}
+
 function log(level: DebugLevel, scope: string | undefined, messages: any[]) {
   const levelOrder: DebugLevel[] = ['trace', 'debug', 'info', 'warn', 'error'];
 
@@ -52,15 +100,17 @@ function log(level: DebugLevel, scope: string | undefined, messages: any[]) {
   }
 
   const allMessages = messages.reduce((acc, current) => {
+    const serialized = serializeValue(current);
+
     if (acc.endsWith('\n')) {
-      return acc + current;
+      return acc + serialized;
     }
 
     if (!acc) {
-      return current;
+      return serialized;
     }
 
-    return `${acc} ${current}`;
+    return `${acc} ${serialized}`;
   }, '');
 
   const labelBackgroundColor = getColorForLevel(level);
