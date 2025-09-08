@@ -63,6 +63,80 @@ export const apiClient = {
   },
 
   /**
+   * Fetch all zip uploads from NocoBase
+   */
+  async getZipUploads(): Promise<any> {
+    return makeRequest(API_CONFIG.endpoints.collections.zipUploads);
+  },
+
+  /**
+   * Fetch the base-template zip from NocoBase
+   */
+  async getBaseTemplate(): Promise<any> {
+    const response = await makeRequest(API_CONFIG.endpoints.templates.allTemplates);
+
+    if (!response.data || response.data.length === 0) {
+      throw new ApiError('No zip uploads found', 404, 'NO_UPLOADS_FOUND');
+    }
+
+    // Find base-template by title
+    const baseTemplate = response.data.find((item: any) => item.title === 'base-template');
+
+    if (!baseTemplate) {
+      throw new ApiError('Base template not found', 404, 'TEMPLATE_NOT_FOUND');
+    }
+
+    return baseTemplate;
+  },
+
+  /**
+   * Download a zip file from NocoBase by direct URL
+   */
+  async downloadZipByUrl(url: string): Promise<ArrayBuffer> {
+    const token = authStore.get().token;
+
+    const response = await fetch(buildUrl(url), {
+      method: 'GET',
+      headers: {
+        ...getAuthHeaders(token || undefined),
+      },
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      await logout();
+      throw new ApiError('Authentication required', response.status, 'AUTH_ERROR');
+    }
+
+    if (!response.ok) {
+      throw new ApiError(`Failed to download zip file: ${response.statusText}`, response.status);
+    }
+
+    return response.arrayBuffer();
+  },
+
+  /**
+   * Get base template zip file as ArrayBuffer for processing
+   */
+  async getBaseTemplateZip(): Promise<ArrayBuffer> {
+    try {
+      const template = await this.getBaseTemplate();
+
+      if (!template.url) {
+        throw new ApiError('Base template file URL not found', 404, 'TEMPLATE_FILE_NOT_FOUND');
+      }
+
+      // Use the direct URL from NocoBase (e.g., "/storage/uploads/base-template-auth4x.zip")
+      return this.downloadZipByUrl(template.url);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      throw new ApiError('Failed to fetch base template', 500, 'TEMPLATE_FETCH_ERROR');
+    }
+  },
+
+  /**
    * Generic GET request
    */
   async get<T>(endpoint: string): Promise<T> {

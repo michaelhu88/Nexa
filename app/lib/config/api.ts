@@ -12,6 +12,18 @@ export const API_CONFIG = {
     },
     collections: {
       inventory: '/api/collections/inventory',
+      zipUploads: '/api/zip_uploads',
+    },
+    files: {
+      attachments: '/api/attachments',
+      download: (id: string) => `/api/attachments/${id}`,
+
+      // NocoBase stores files directly with URL paths
+      directDownload: (url: string) => url, // Files have direct /storage/uploads/ URLs
+    },
+    templates: {
+      baseTemplate: '/api/zip_uploads?filter[title][$eq]=base-template',
+      allTemplates: '/api/zip_uploads',
     },
   },
   headers: {

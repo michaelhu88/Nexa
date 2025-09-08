@@ -6,7 +6,6 @@ import { classNames } from '~/utils/classNames';
 import { HeaderActionButtons } from './HeaderActionButtons.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
 import { LogoutButton } from '~/components/auth/LogoutButton';
-import { Button } from '~/components/ui/Button';
 
 export function Header() {
   const chat = useStore(chatStore);
@@ -25,30 +24,6 @@ export function Header() {
           Nexa
         </a>
       </div>
-
-      {/* Navigation Links (when authenticated) */}
-      {auth.isAuthenticated && (
-        <nav className="flex items-center gap-4 ml-8">
-          <Button
-            onClick={() => (window.location.href = '/')}
-            variant="ghost"
-            size="sm"
-            className="flex items-center space-x-2"
-          >
-            <div className="i-ph:chat-duotone" />
-            <span>Chat</span>
-          </Button>
-          <Button
-            onClick={() => (window.location.href = '/inventory')}
-            variant="ghost"
-            size="sm"
-            className="flex items-center space-x-2"
-          >
-            <div className="i-ph:package-duotone" />
-            <span>Inventory</span>
-          </Button>
-        </nav>
-      )}
 
       {/* Existing chat-specific content */}
       {chat.started && auth.isAuthenticated && (
