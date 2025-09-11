@@ -1,13 +1,9 @@
 import { useStore } from '@nanostores/react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import {
-  chatId as chatIdStore,
-  db,
-  description as descriptionStore,
-  getMessages,
-  updateChatDescription,
-} from '~/lib/persistence';
+import { chatId as chatIdStore, description as descriptionStore } from '~/lib/persistence';
+
+// TODO: Update this hook to work with project descriptions instead of chat descriptions
 
 interface EditChatDescriptionOptions {
   initialDescription?: string;
@@ -64,18 +60,9 @@ export function useEditChatDescription({
   }, []);
 
   const fetchLatestDescription = useCallback(async () => {
-    if (!db || !chatId) {
-      return initialDescription;
-    }
-
-    try {
-      const chat = await getMessages(db, chatId);
-      return chat?.description || initialDescription;
-    } catch (error) {
-      console.error('Failed to fetch latest description:', error);
-      return initialDescription;
-    }
-  }, [db, chatId, initialDescription]);
+    // TODO: Update to fetch project description from Supabase
+    return initialDescription;
+  }, [initialDescription]);
 
   const handleBlur = useCallback(async () => {
     const latestDescription = await fetchLatestDescription();
@@ -118,30 +105,19 @@ export function useEditChatDescription({
       }
 
       try {
-        if (!db) {
-          toast.error('Chat persistence is not available');
-          return;
-        }
-
-        if (!chatId) {
-          toast.error('Chat Id is not available');
-          return;
-        }
-
-        await updateChatDescription(db, chatId, currentDescription);
-
+        // TODO: Update project description via project store API
         if (syncWithGlobalStore) {
           descriptionStore.set(currentDescription);
         }
 
-        toast.success('Chat description updated successfully');
+        toast.info('Description editing moved to project management system');
       } catch (error) {
-        toast.error('Failed to update chat description: ' + (error as Error).message);
+        toast.error('Failed to update description: ' + (error as Error).message);
       }
 
       toggleEditMode();
     },
-    [currentDescription, db, chatId, initialDescription, customChatId],
+    [currentDescription, chatId, initialDescription, customChatId, isValidDescription, syncWithGlobalStore],
   );
 
   const handleKeyDown = useCallback(

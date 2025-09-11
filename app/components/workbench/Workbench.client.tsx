@@ -26,6 +26,7 @@ import useViewport from '~/lib/hooks';
 import { PushToGitHubDialog } from '~/components/@settings/tabs/connections/components/PushToGitHubDialog';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { usePreviewStore } from '~/lib/stores/previews';
+import { IndexingStatus } from '~/components/embeddings/IndexingStatus';
 
 interface WorkspaceProps {
   chatStarted?: boolean;
@@ -383,7 +384,9 @@ export const Workbench = memo(
               <div className="h-full flex flex-col bg-nexa-elements-background-depth-2 border border-nexa-elements-borderColor shadow-sm rounded-lg overflow-hidden">
                 <div className="flex items-center px-3 py-2 border-b border-nexa-elements-borderColor gap-1">
                   <Slider selected={selectedView} options={sliderOptions} setSelected={setSelectedView} />
-                  <div className="ml-auto" />
+                  <div className="flex-1" />
+                  <IndexingStatus />
+                  <div className="ml-2" />
                   {selectedView === 'code' && (
                     <div className="flex overflow-y-auto">
                       <PanelHeaderButton

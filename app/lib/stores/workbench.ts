@@ -9,6 +9,7 @@ import { EditorStore } from './editor';
 import { FilesStore, type FileMap } from './files';
 import { PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
+import { projectActions, getCurrentProject, hasUnsavedChanges, projectFilesStore } from './projects';
 import JSZip from 'jszip';
 import fileSaver from 'file-saver';
 import { Octokit, type RestEndpointMethodTypes } from '@octokit/rest';
@@ -18,6 +19,10 @@ import { description } from '~/lib/persistence';
 import Cookies from 'js-cookie';
 import { createSampler } from '~/utils/sampler';
 import type { ActionAlert, DeployAlert, SupabaseAlert } from '~/types/actions';
+import { toast } from 'react-toastify';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('WorkbenchStore');
 
 const { saveAs } = fileSaver;
 
@@ -77,6 +82,21 @@ export class WorkbenchStore {
         }
       }
     }
+
+    // Set up auto-save for Supabase
+    this.#setupAutoSave();
+  }
+
+  #autoSaveCleanup?: () => void;
+
+  #setupAutoSave() {
+    // Clean up existing auto-save if any
+    if (this.#autoSaveCleanup) {
+      this.#autoSaveCleanup();
+    }
+
+    // Set up auto-save from project store
+    this.#autoSaveCleanup = projectActions.startAutoSave(30000); // Auto-save every 30 seconds
   }
 
   addToExecutionQueue(callback: () => Promise<void>) {
@@ -154,6 +174,13 @@ export class WorkbenchStore {
   setDocuments(files: FileMap) {
     this.#editorStore.setDocuments(files);
 
+    // Also sync with project store
+    projectFilesStore.set(files);
+
+    // Reset unsaved changes when loading new documents
+    hasUnsavedChanges.set(false);
+    this.unsavedFiles.set(new Set());
+
     if (this.#filesStore.filesCount > 0 && this.currentDocument.get() === undefined) {
       // we find the first file and select it
       for (const [filePath, dirent] of Object.entries(files)) {
@@ -181,6 +208,13 @@ export class WorkbenchStore {
 
     this.#editorStore.updateFile(filePath, newContent);
 
+    // Update project files store
+    const fileInfo = this.#filesStore.getFile(filePath);
+
+    if (fileInfo) {
+      projectActions.updateFile(filePath, newContent, fileInfo.isBinary);
+    }
+
     const currentDocument = this.currentDocument.get();
 
     if (currentDocument) {
@@ -194,8 +228,14 @@ export class WorkbenchStore {
 
       if (unsavedChanges) {
         newUnsavedFiles.add(currentDocument.filePath);
+        hasUnsavedChanges.set(true);
       } else {
         newUnsavedFiles.delete(currentDocument.filePath);
+
+        // Check if there are any other unsaved files
+        if (newUnsavedFiles.size === 0) {
+          hasUnsavedChanges.set(false);
+        }
       }
 
       this.unsavedFiles.set(newUnsavedFiles);
@@ -234,10 +274,22 @@ export class WorkbenchStore {
 
     await this.#filesStore.saveFile(filePath, document.value);
 
+    // Update project files store
+    const fileInfo = this.#filesStore.getFile(filePath);
+
+    if (fileInfo) {
+      projectActions.updateFile(filePath, document.value, fileInfo.isBinary);
+    }
+
     const newUnsavedFiles = new Set(this.unsavedFiles.get());
     newUnsavedFiles.delete(filePath);
 
     this.unsavedFiles.set(newUnsavedFiles);
+
+    // Update global unsaved state
+    if (newUnsavedFiles.size === 0) {
+      hasUnsavedChanges.set(false);
+    }
   }
 
   async saveCurrentDocument() {
@@ -268,8 +320,24 @@ export class WorkbenchStore {
   }
 
   async saveAllFiles() {
-    for (const filePath of this.unsavedFiles.get()) {
+    const unsavedPaths = Array.from(this.unsavedFiles.get());
+
+    // Save files locally first
+    for (const filePath of unsavedPaths) {
       await this.saveFile(filePath);
+    }
+
+    // Then save to Supabase if there's a current project
+    const currentProject = getCurrentProject();
+
+    if (currentProject && unsavedPaths.length > 0) {
+      try {
+        await projectActions.saveProject();
+        logger.info('All files saved to Supabase successfully');
+      } catch (error) {
+        logger.error('Failed to save files to Supabase:', error);
+        toast.error('Failed to save files to cloud. Your local changes are preserved.');
+      }
     }
   }
 

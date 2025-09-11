@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useStore } from '@nanostores/react';
 import { classNames } from '~/utils/classNames';
 import { profileStore } from '~/lib/stores/profile';
+import { useAuth } from '~/lib/hooks/useAuth';
 import type { TabType, Profile } from './types';
 
 const BetaLabel = () => (
@@ -17,6 +18,7 @@ interface AvatarDropdownProps {
 
 export const AvatarDropdown = ({ onSelectTab }: AvatarDropdownProps) => {
   const profile = useStore(profileStore) as Profile;
+  const { user, isAuthenticated } = useAuth();
 
   return (
     <DropdownMenu.Root>
@@ -26,7 +28,15 @@ export const AvatarDropdown = ({ onSelectTab }: AvatarDropdownProps) => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          {profile?.avatar ? (
+          {isAuthenticated && user?.user_metadata?.avatar_url ? (
+            <img
+              src={user.user_metadata.avatar_url}
+              alt={user.user_metadata?.full_name || user.email || 'Profile'}
+              className="w-full h-full rounded-full object-cover"
+              loading="eager"
+              decoding="sync"
+            />
+          ) : profile?.avatar ? (
             <img
               src={profile.avatar}
               alt={profile?.username || 'Profile'}
@@ -34,6 +44,15 @@ export const AvatarDropdown = ({ onSelectTab }: AvatarDropdownProps) => {
               loading="eager"
               decoding="sync"
             />
+          ) : isAuthenticated && user ? (
+            <div className="w-full h-full rounded-full bg-nexa-elements-item-contentAccent flex items-center justify-center text-white text-sm font-medium">
+              {(user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'U')
+                .split(' ')
+                .map((word: string) => word.charAt(0))
+                .join('')
+                .toUpperCase()
+                .slice(0, 2)}
+            </div>
           ) : (
             <div className="w-full h-full rounded-full flex items-center justify-center bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500">
               <div className="i-ph:question w-6 h-6" />
@@ -62,7 +81,15 @@ export const AvatarDropdown = ({ onSelectTab }: AvatarDropdownProps) => {
             )}
           >
             <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-white dark:bg-gray-800 shadow-sm">
-              {profile?.avatar ? (
+              {isAuthenticated && user?.user_metadata?.avatar_url ? (
+                <img
+                  src={user.user_metadata.avatar_url}
+                  alt={user.user_metadata?.full_name || user.email || 'Profile'}
+                  className={classNames('w-full h-full', 'object-cover', 'transform-gpu', 'image-rendering-crisp')}
+                  loading="eager"
+                  decoding="sync"
+                />
+              ) : profile?.avatar ? (
                 <img
                   src={profile.avatar}
                   alt={profile?.username || 'Profile'}
@@ -70,6 +97,15 @@ export const AvatarDropdown = ({ onSelectTab }: AvatarDropdownProps) => {
                   loading="eager"
                   decoding="sync"
                 />
+              ) : isAuthenticated && user ? (
+                <div className="w-full h-full rounded-full bg-nexa-elements-item-contentAccent flex items-center justify-center text-white text-sm font-medium">
+                  {(user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'U')
+                    .split(' ')
+                    .map((word: string) => word.charAt(0))
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </div>
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500 font-medium text-lg">
                   <span className="relative -top-0.5">?</span>
@@ -78,9 +114,16 @@ export const AvatarDropdown = ({ onSelectTab }: AvatarDropdownProps) => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                {profile?.username || 'Guest User'}
+                {isAuthenticated && user
+                  ? user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
+                  : profile?.username || 'Guest User'}
               </div>
-              {profile?.bio && <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{profile.bio}</div>}
+              {isAuthenticated && user?.email && (
+                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</div>
+              )}
+              {!isAuthenticated && profile?.bio && (
+                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{profile.bio}</div>
+              )}
             </div>
           </div>
 

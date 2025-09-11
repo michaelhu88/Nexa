@@ -1,10 +1,14 @@
-import { memo, Fragment } from 'react';
+import { memo, Fragment, useEffect } from 'react';
 import { Markdown } from './Markdown';
 import type { JSONValue } from 'ai';
 import Popover from '~/components/ui/Popover';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { WORK_DIR } from '~/utils/constants';
 import WithTooltip from '~/components/ui/Tooltip';
+import { createScopedLogger } from '~/utils/logger';
+import type { FileMap } from '~/lib/stores/files';
+
+const logger = createScopedLogger('AssistantMessage');
 
 interface AssistantMessageProps {
   content: string;
@@ -42,6 +46,44 @@ export const AssistantMessage = memo(({ content, annotations, messageId, onRewin
   const filteredAnnotations = (annotations?.filter(
     (annotation: JSONValue) => annotation && typeof annotation === 'object' && Object.keys(annotation).includes('type'),
   ) || []) as { type: string; value: any } & { [key: string]: any }[];
+
+  // Handle moduleIntegration annotations - load files directly to workbench
+  useEffect(() => {
+    const moduleIntegration = filteredAnnotations.find((annotation) => annotation.type === 'moduleIntegration');
+
+    if (moduleIntegration && moduleIntegration.files) {
+      logger.info('🎯 Module integration annotation detected, loading files to workbench', {
+        moduleKey: moduleIntegration.moduleKey,
+        fileCount: moduleIntegration.files.length,
+      });
+
+      // Open workbench if not already open
+      if (!workbenchStore.showWorkbench.get()) {
+        workbenchStore.showWorkbench.set(true);
+      }
+
+      // Load files directly into workbench
+      const fileMap: FileMap = {};
+
+      for (const file of moduleIntegration.files) {
+        const fullPath = `${WORK_DIR}/${file.path}`;
+        fileMap[fullPath] = {
+          type: 'file',
+          content: file.content,
+          isBinary: false,
+        };
+        logger.debug(`Loading module file: ${file.path} (${file.content.length} chars)`);
+      }
+
+      // Set files in workbench
+      workbenchStore.setDocuments(fileMap);
+
+      logger.info('✅ Module files loaded to workbench successfully', {
+        moduleKey: moduleIntegration.moduleKey,
+        filesLoaded: Object.keys(fileMap).length,
+      });
+    }
+  }, [filteredAnnotations]);
 
   let chatSummary: string | undefined = undefined;
 

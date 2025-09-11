@@ -1,212 +1,171 @@
-import { map } from 'nanostores';
-import type { AuthState, User, LoginCredentials } from '~/types/auth';
-import { API_CONFIG, getAuthHeaders, buildUrl } from '~/lib/config/api';
-import { logStore } from './logs';
+import { atom } from 'nanostores';
+import type {
+  AuthState,
+  AuthUser,
+  AuthSession,
+  SignInCredentials,
+  SignUpCredentials,
+  ResetPasswordCredentials,
+} from '~/types/auth';
+import { authClient } from '~/lib/supabase/auth-client';
+import { updateProfile } from '~/lib/stores/profile';
 
-const AUTH_TOKEN_KEY = 'nexa_auth_token';
-const AUTH_USER_KEY = 'nexa_auth_user';
-
-export const authStore = map<AuthState>({
-  isAuthenticated: false,
+// Initial auth state
+const initialState: AuthState = {
   user: null,
-  token: null,
-  isLoading: false,
-  error: null,
-});
+  session: null,
+  isLoading: true,
+  isInitialized: false,
+};
 
-function initStore() {
-  if (!import.meta.env.SSR) {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    const userStr = localStorage.getItem(AUTH_USER_KEY);
+export const authStore = atom<AuthState>(initialState);
 
-    if (token && userStr) {
-      try {
-        const user = JSON.parse(userStr) as User;
-        authStore.setKey('isAuthenticated', true);
-        authStore.setKey('user', user);
-        authStore.setKey('token', token);
-        logStore.logSystem('Auth state restored from localStorage', { username: user.username });
-      } catch {
-        clearAuthData();
-        logStore.logSystem('Failed to restore auth state, cleared localStorage');
-      }
-    }
+// Helper function to sync profileStore with auth data
+const syncProfileWithAuth = (user: AuthUser | null) => {
+  if (user) {
+    // Sync authenticated user data to profile store
+    updateProfile({
+      username: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+      bio: '', // Keep existing bio or empty
+      avatar: user.user_metadata?.avatar_url || '', // Use auth avatar or keep existing
+    });
+  } else {
+    // Clear profile when user signs out (optional - you might want to keep profile data)
+    updateProfile({
+      username: '',
+      bio: '',
+      avatar: '',
+    });
   }
-}
+};
 
-function clearAuthData() {
-  if (!import.meta.env.SSR) {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_USER_KEY);
-  }
+// Auth actions
+export const authActions = {
+  async initialize() {
+    try {
+      const {
+        data: { session },
+      } = await authClient.auth.getSession();
 
-  authStore.setKey('isAuthenticated', false);
-  authStore.setKey('user', null);
-  authStore.setKey('token', null);
-  authStore.setKey('error', null);
-}
+      authStore.set({
+        user: (session?.user as AuthUser) || null,
+        session: (session as AuthSession) || null,
+        isLoading: false,
+        isInitialized: true,
+      });
 
-export async function login(credentials: LoginCredentials): Promise<void> {
-  authStore.setKey('isLoading', true);
-  authStore.setKey('error', null);
+      // Sync profile store with initial auth data
+      syncProfileWithAuth((session?.user as AuthUser) || null);
 
-  try {
-    // Try different credential formats in order
-    const credentialFormats = [
-      // Format 1: username field (most common for default admin)
-      { username: credentials.username, password: credentials.password },
-
-      // Format 2: email field (common for email-based logins)
-      { email: credentials.username, password: credentials.password },
-
-      // Format 3: account field (sometimes used)
-      { account: credentials.username, password: credentials.password },
-    ];
-
-    let lastError: any = null;
-
-    for (let i = 0; i < credentialFormats.length; i++) {
-      const format = credentialFormats[i];
-      const formatName = Object.keys(format)[0]; // 'username', 'email', or 'account'
-
-      console.log(`Trying format ${i + 1}/3: ${formatName} field`);
-
-      try {
-        const response = await fetch(buildUrl(API_CONFIG.endpoints.auth.signIn), {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify(format),
+      // Listen for auth changes
+      authClient.auth.onAuthStateChange((_event, session) => {
+        const user = (session?.user as AuthUser) || null;
+        authStore.set({
+          user,
+          session: (session as AuthSession) || null,
+          isLoading: false,
+          isInitialized: true,
         });
 
-        const responseText = await response.text();
-        console.log(`${formatName} format - Status:`, response.status);
-        console.log(`${formatName} format - Body:`, responseText);
-
-        if (response.ok) {
-          // Success! Parse the response and continue with login
-          const data = JSON.parse(responseText);
-          console.log(`✅ Login successful with ${formatName} format:`, data);
-
-          // Try different possible response structures
-          let token, user;
-
-          if (data.data?.token) {
-            token = data.data.token;
-            user = data.data.user;
-          } else if (data.token) {
-            token = data.token;
-            user = data.user;
-          } else if (data.access_token) {
-            token = data.access_token;
-            user = data.user;
-          } else {
-            console.log('Unknown response format, using entire response as user data');
-            token = 'temp_token';
-            user = { username: credentials.username, ...data };
-          }
-
-          if (!import.meta.env.SSR) {
-            localStorage.setItem(AUTH_TOKEN_KEY, token);
-            localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-          }
-
-          authStore.setKey('isAuthenticated', true);
-          authStore.setKey('user', user);
-          authStore.setKey('token', token);
-
-          logStore.logSystem('User logged in successfully', { username: user.username });
-
-          return; // Success! Exit the function
-        } else {
-          // Parse error for this format
-          try {
-            const errorData = JSON.parse(responseText);
-            lastError =
-              errorData.errors?.[0]?.message ||
-              errorData.error?.message ||
-              errorData.message ||
-              `HTTP ${response.status}`;
-            console.log(`❌ ${formatName} format failed:`, errorData);
-          } catch {
-            lastError = `HTTP ${response.status}: ${response.statusText}`;
-          }
-        }
-      } catch (error) {
-        console.log(`❌ ${formatName} format error:`, error);
-        lastError = error instanceof Error ? error.message : 'Network error';
-      }
-    }
-
-    // If we get here, all formats failed
-    console.log('❌ All credential formats failed');
-
-    const finalError = lastError || 'Login failed with all credential formats';
-    authStore.setKey('error', finalError);
-    logStore.logSystem('Login failed', { error: finalError });
-    throw new AuthError(finalError);
-  } catch (error) {
-    const authError = error instanceof AuthError ? error : new AuthError('Login failed');
-    authStore.setKey('error', authError.message);
-    logStore.logSystem('Login failed', { error: authError.message });
-    throw authError;
-  } finally {
-    authStore.setKey('isLoading', false);
-  }
-}
-
-export async function logout(): Promise<void> {
-  const currentToken = authStore.get().token;
-
-  if (currentToken) {
-    try {
-      await fetch(buildUrl(API_CONFIG.endpoints.auth.signOut), {
-        method: 'POST',
-        headers: getAuthHeaders(currentToken),
+        // Sync profile store whenever auth state changes
+        syncProfileWithAuth(user);
       });
     } catch (error) {
-      logStore.logSystem('Logout API call failed, but clearing local state', { error });
+      console.error('Auth initialization error:', error);
+      authStore.set({
+        user: null,
+        session: null,
+        isLoading: false,
+        isInitialized: true,
+      });
     }
-  }
+  },
 
-  clearAuthData();
-  logStore.logSystem('User logged out');
-}
-
-export async function checkAuthStatus(): Promise<boolean> {
-  const { token } = authStore.get();
-
-  if (!token) {
-    return false;
-  }
-
-  try {
-    const response = await fetch(buildUrl(API_CONFIG.endpoints.auth.check), {
-      headers: getAuthHeaders(token),
+  async signIn(credentials: SignInCredentials) {
+    const { data, error } = await authClient.auth.signInWithPassword({
+      email: credentials.email,
+      password: credentials.password,
     });
 
-    if (!response.ok) {
-      clearAuthData();
-      return false;
+    if (error) {
+      throw new Error(error.message);
     }
 
-    return true;
-  } catch {
-    clearAuthData();
-    return false;
-  }
-}
+    return data;
+  },
 
-class AuthError extends Error {
-  code?: string;
-  status?: number;
+  async signUp(credentials: SignUpCredentials) {
+    const { data, error } = await authClient.auth.signUp({
+      email: credentials.email,
+      password: credentials.password,
+      options: {
+        data: {
+          full_name: credentials.fullName || '',
+        },
+      },
+    });
 
-  constructor(message: string, status?: number, code?: string) {
-    super(message);
-    this.name = 'AuthError';
-    this.status = status;
-    this.code = code;
-  }
-}
+    if (error) {
+      throw new Error(error.message);
+    }
 
-// Initialize store when module loads
-initStore();
+    return data;
+  },
+
+  async signInWithProvider(provider: 'google' | 'github') {
+    const { error } = await authClient.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}`,
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  async signOut() {
+    const { error } = await authClient.auth.signOut();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  async resetPassword(credentials: ResetPasswordCredentials) {
+    const { error } = await authClient.auth.resetPasswordForEmail(credentials.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  async updatePassword(password: string) {
+    const { error } = await authClient.auth.updateUser({
+      password,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  },
+};
+
+// Helper functions
+export const isAuthenticated = () => {
+  const state = authStore.get();
+  return !!state.user && !!state.session;
+};
+
+export const getUser = () => {
+  const state = authStore.get();
+  return state.user;
+};
+
+export const getSession = () => {
+  const state = authStore.get();
+  return state.session;
+};

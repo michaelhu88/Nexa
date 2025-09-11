@@ -1,15 +1,13 @@
 import { useStore } from '@nanostores/react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { chatStore } from '~/lib/stores/chat';
-import { authStore } from '~/lib/stores/auth';
 import { classNames } from '~/utils/classNames';
 import { HeaderActionButtons } from './HeaderActionButtons.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
-import { LogoutButton } from '~/components/auth/LogoutButton';
+import { UserMenu } from '~/components/auth/UserMenu';
 
 export function Header() {
   const chat = useStore(chatStore);
-  const auth = useStore(authStore);
 
   return (
     <header
@@ -25,32 +23,20 @@ export function Header() {
         </a>
       </div>
 
-      {/* Existing chat-specific content */}
-      {chat.started && auth.isAuthenticated && (
-        <>
-          <span className="flex-1 px-4 truncate text-center text-nexa-elements-textPrimary">
+      {/* Chat-specific content - always use flex-1 to push user menu right */}
+      <div className="flex-1 flex items-center justify-center">
+        {chat.started && (
+          <div className="px-4 truncate text-center text-nexa-elements-textPrimary max-w-lg">
             <ClientOnly>{() => <ChatDescription />}</ClientOnly>
-          </span>
-          <ClientOnly>
-            {() => (
-              <div className="mr-1">
-                <HeaderActionButtons />
-              </div>
-            )}
-          </ClientOnly>
-        </>
-      )}
-
-      {/* User info and logout (when authenticated) */}
-      {auth.isAuthenticated && (
-        <div className="flex items-center gap-4 ml-auto">
-          <div className="flex items-center gap-2 text-nexa-elements-textSecondary">
-            <div className="i-ph:user-circle-duotone text-lg" />
-            <span className="text-sm">Welcome, {auth.user?.username}</span>
           </div>
-          <ClientOnly>{() => <LogoutButton />}</ClientOnly>
-        </div>
-      )}
+        )}
+      </div>
+
+      <div className="flex items-center gap-3">
+        {chat.started && <ClientOnly>{() => <HeaderActionButtons />}</ClientOnly>}
+
+        <ClientOnly>{() => <UserMenu />}</ClientOnly>
+      </div>
     </header>
   );
 }

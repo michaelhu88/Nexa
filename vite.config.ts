@@ -91,15 +91,6 @@ export default defineConfig((config) => {
       __PKG_OPTIONAL_DEPENDENCIES: JSON.stringify(pkg.optionalDependencies),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     },
-    server: {
-      proxy: {
-        '/storage': {
-          target: process.env.VITE_NOCOBASE_API_URL || 'http://127.0.0.1:13000',
-          changeOrigin: true,
-          secure: false,
-        },
-      },
-    },
     build: {
       target: 'esnext',
       rollupOptions: {
@@ -163,10 +154,25 @@ export default defineConfig((config) => {
     ],
     envPrefix: [
       'VITE_',
+      'OPENAI_API_KEY',
+      'ANTHROPIC_API_KEY',
+      'GROQ_API_KEY',
+      'GOOGLE_GENERATIVE_AI_API_KEY',
+      'MISTRAL_API_KEY',
+      'COHERE_API_KEY',
+      'PERPLEXITY_API_KEY',
+      'TOGETHER_API_KEY',
+      'DEEPSEEK_API_KEY',
+      'XAI_API_KEY',
+      'OPEN_ROUTER_API_KEY',
+      'HuggingFace_API_KEY',
+      'HYPERBOLIC_API_KEY',
+      'AWS_BEDROCK_CONFIG',
       'OPENAI_LIKE_API_BASE_URL',
       'OLLAMA_API_BASE_URL',
       'LMSTUDIO_API_BASE_URL',
       'TOGETHER_API_BASE_URL',
+      'HYPERBOLIC_API_BASE_URL',
     ],
     css: {
       preprocessorOptions: {

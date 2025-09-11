@@ -9,7 +9,6 @@ import { useAnimate } from 'framer-motion';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { cssTransition, toast, ToastContainer } from 'react-toastify';
 import { useMessageParser, usePromptEnhancer, useShortcuts } from '~/lib/hooks';
-import { useEnterpriseAutomation } from '~/lib/hooks/useEnterpriseAutomation';
 import { description, useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
@@ -143,6 +142,7 @@ export const ChatImpl = memo(
     });
 
     const { showChat } = useStore(chatStore);
+    const showWorkbench = useStore(workbenchStore.showWorkbench);
 
     const [animationScope, animate] = useAnimate();
 
@@ -168,6 +168,7 @@ export const ChatImpl = memo(
         files,
         promptId,
         contextOptimization: contextOptimizationEnabled,
+        hasWorkbench: showWorkbench, // Pass workbench state to distinguish phases
         supabase: {
           isConnected: supabaseConn.isConnected,
           hasSelectedProject: !!selectedProject,
@@ -232,26 +233,6 @@ export const ChatImpl = memo(
 
     const { enhancingPrompt, promptEnhanced, enhancePrompt, resetEnhancer } = usePromptEnhancer();
     const { parsedMessages, parseMessages } = useMessageParser();
-
-    // Enterprise automation detection and loading
-    useEnterpriseAutomation({
-      messages,
-      onTemplateLoad: (templateMessage) => {
-        // Append the template message to chat
-        logger.info('🎯 CHAT: Enterprise template message received for loading', {
-          messageId: templateMessage.id,
-          role: templateMessage.role,
-          contentLength: templateMessage.content.length,
-          hasNexaArtifact: templateMessage.content.includes('<nexaArtifact'),
-          hasNexaAction: templateMessage.content.includes('<nexaAction'),
-        });
-
-        append(templateMessage);
-
-        logger.info('✅ CHAT: Template message appended to chat - should trigger message parser');
-      },
-      enabled: true,
-    });
 
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
 
@@ -330,7 +311,6 @@ export const ChatImpl = memo(
         return;
       }
 
-      // If no locked items, proceed normally with the original message
       const finalMessageContent = messageContent;
 
       runAnimation();

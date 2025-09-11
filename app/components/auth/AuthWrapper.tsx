@@ -1,41 +1,68 @@
-import { useStore } from '@nanostores/react';
-import { useEffect } from 'react';
-import { authStore, checkAuthStatus } from '~/lib/stores/auth';
-import { LoginForm } from './LoginForm';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useAuth } from '~/lib/hooks/useAuth';
+import { authActions } from '~/lib/stores/auth';
+import { AuthForm } from './AuthForm';
+import { LoadingSpinner } from './LoadingSpinner';
+import { MigrationDialog } from '~/components/migration/MigrationDialog';
+import BackgroundRays from '~/components/ui/BackgroundRays';
 
 interface AuthWrapperProps {
-  children: React.ReactNode;
+  children: ReactNode;
+  fallback?: ReactNode;
 }
 
-export function AuthWrapper({ children }: AuthWrapperProps) {
-  const auth = useStore(authStore);
+export function AuthWrapper({ children, fallback }: AuthWrapperProps) {
+  const { isAuthenticated, isInitialized, isLoading } = useAuth();
+  const [showMigration, setShowMigration] = useState(false);
+  const [migrationCompleted, setMigrationCompleted] = useState(false);
 
   useEffect(() => {
-    // Verify auth status on mount if we have a token
-    if (auth.token && !auth.isAuthenticated) {
-      checkAuthStatus().catch(() => {
-        // Auth check failed, store will be cleared automatically
-      });
-    }
-  }, [auth.token, auth.isAuthenticated]);
+    // Initialize auth when component mounts
+    authActions.initialize();
+  }, []);
 
-  // Show loading state while checking authentication
-  if (auth.isLoading) {
+  useEffect(() => {
+    // Show migration dialog after authentication is complete
+    if (isAuthenticated && isInitialized && !isLoading && !migrationCompleted) {
+      setShowMigration(true);
+    }
+  }, [isAuthenticated, isInitialized, isLoading, migrationCompleted]);
+
+  const handleMigrationComplete = () => {
+    setShowMigration(false);
+    setMigrationCompleted(true);
+  };
+
+  // Show loading spinner while auth is being initialized
+  if (!isInitialized || isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-nexa-elements-background-depth-1">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-nexa-elements-textSecondary">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-nexa-elements-background-depth-1 flex items-center justify-center">
+        <BackgroundRays />
+        <LoadingSpinner size="lg" message="Initializing..." className="relative z-10" />
       </div>
     );
   }
 
-  // Show login form if not authenticated
-  if (!auth.isAuthenticated) {
-    return <LoginForm />;
+  // Show auth form if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-nexa-elements-background-depth-1 flex items-center justify-center p-4">
+        <BackgroundRays />
+        <div className="relative z-10 w-full">{fallback || <AuthForm />}</div>
+      </div>
+    );
   }
 
-  // Show protected content if authenticated
+  // User is authenticated, show migration dialog if needed
+  if (showMigration) {
+    return (
+      <>
+        {children}
+        <MigrationDialog onComplete={handleMigrationComplete} />
+      </>
+    );
+  }
+
+  // User is authenticated and migration is complete, show the protected content
   return <>{children}</>;
 }

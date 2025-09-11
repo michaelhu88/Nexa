@@ -6,7 +6,7 @@ import { ThemeSwitch } from '~/components/ui/ThemeSwitch';
 import { ControlPanel } from '~/components/@settings/core/ControlPanel';
 import { SettingsButton } from '~/components/ui/SettingsButton';
 import { Button } from '~/components/ui/Button';
-import { db, deleteById, getAll, chatId, type ChatHistoryItem, useChatHistory } from '~/lib/persistence';
+import { chatId, type ChatHistoryItem, useChatHistory } from '~/lib/persistence';
 import { cubicEasingFn } from '~/utils/easings';
 import { HistoryItem } from './HistoryItem';
 import { binDates } from './date-binning';
@@ -14,6 +14,7 @@ import { useSearchFilter } from '~/lib/hooks/useSearchFilter';
 import { classNames } from '~/utils/classNames';
 import { useStore } from '@nanostores/react';
 import { profileStore } from '~/lib/stores/profile';
+import { useAuth } from '~/lib/hooks/useAuth';
 
 const menuVariants = {
   closed: {
@@ -64,13 +65,14 @@ function CurrentDateTime() {
 }
 
 export const Menu = () => {
-  const { duplicateCurrentChat, exportChat } = useChatHistory();
+  const { exportChat } = useChatHistory();
   const menuRef = useRef<HTMLDivElement>(null);
   const [list, setList] = useState<ChatHistoryItem[]>([]);
   const [open, setOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState<DialogContent>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const profile = useStore(profileStore);
+  const { user, isAuthenticated } = useAuth();
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
@@ -80,35 +82,17 @@ export const Menu = () => {
   });
 
   const loadEntries = useCallback(() => {
-    if (db) {
-      getAll(db)
-        .then((list) => list.filter((item) => item.urlId && item.description))
-        .then(setList)
-        .catch((error) => toast.error(error.message));
-    }
+    /*
+     * TODO: Update to load projects instead of individual chats
+     * For now, showing empty list as chat history has been replaced by project-based system
+     */
+    setList([]);
   }, []);
 
-  const deleteChat = useCallback(
-    async (id: string): Promise<void> => {
-      if (!db) {
-        throw new Error('Database not available');
-      }
-
-      // Delete chat snapshot from localStorage
-      try {
-        const snapshotKey = `snapshot:${id}`;
-        localStorage.removeItem(snapshotKey);
-        console.log('Removed snapshot for chat:', id);
-      } catch (snapshotError) {
-        console.error(`Error deleting snapshot for chat ${id}:`, snapshotError);
-      }
-
-      // Delete the chat from the database
-      await deleteById(db, id);
-      console.log('Successfully deleted chat:', id);
-    },
-    [db],
-  );
+  const deleteChat = useCallback(async (_id: string): Promise<void> => {
+    // TODO: Update to delete projects instead of individual chats
+    toast.info('Delete functionality has been moved to the project management system');
+  }, []);
 
   const deleteItem = useCallback(
     (event: React.UIEvent, item: ChatHistoryItem) => {
@@ -150,10 +134,13 @@ export const Menu = () => {
 
   const deleteSelectedItems = useCallback(
     async (itemsToDeleteIds: string[]) => {
-      if (!db || itemsToDeleteIds.length === 0) {
-        console.log('Bulk delete skipped: No DB or no items to delete.');
+      if (itemsToDeleteIds.length === 0) {
+        console.log('Bulk delete skipped: No items to delete.');
         return;
       }
+
+      // TODO: Implement bulk delete for projects
+      toast.info('Bulk delete functionality moved to project management system');
 
       console.log(`Starting bulk delete for ${itemsToDeleteIds.length} chats`, itemsToDeleteIds);
 
@@ -199,7 +186,7 @@ export const Menu = () => {
         window.location.pathname = '/';
       }
     },
-    [deleteChat, loadEntries, db],
+    [deleteChat, loadEntries],
   );
 
   const closeDialog = () => {
@@ -303,8 +290,9 @@ export const Menu = () => {
     };
   }, [isSettingsOpen]);
 
-  const handleDuplicate = async (id: string) => {
-    await duplicateCurrentChat(id);
+  const handleDuplicate = async (_id: string) => {
+    // TODO: Implement project duplication
+    toast.info('Duplicate functionality moved to project management system');
     loadEntries(); // Reload the list after duplication
   };
 
@@ -341,10 +329,20 @@ export const Menu = () => {
           <div className="text-gray-900 dark:text-white font-medium"></div>
           <div className="flex items-center gap-3">
             <span className="font-medium text-sm text-gray-900 dark:text-white truncate">
-              {profile?.username || 'Guest User'}
+              {isAuthenticated && user
+                ? user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
+                : profile?.username || 'Guest User'}
             </span>
             <div className="flex items-center justify-center w-[32px] h-[32px] overflow-hidden bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-500 rounded-full shrink-0">
-              {profile?.avatar ? (
+              {isAuthenticated && user?.user_metadata?.avatar_url ? (
+                <img
+                  src={user.user_metadata.avatar_url}
+                  alt={user.user_metadata?.full_name || user.email || 'User'}
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                  decoding="sync"
+                />
+              ) : profile?.avatar ? (
                 <img
                   src={profile.avatar}
                   alt={profile?.username || 'User'}
@@ -352,6 +350,15 @@ export const Menu = () => {
                   loading="eager"
                   decoding="sync"
                 />
+              ) : isAuthenticated && user ? (
+                <div className="w-full h-full rounded-full bg-nexa-elements-item-contentAccent flex items-center justify-center text-white text-sm font-medium">
+                  {(user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'U')
+                    .split(' ')
+                    .map((word: string) => word.charAt(0))
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </div>
               ) : (
                 <div className="i-ph:user-fill text-lg" />
               )}

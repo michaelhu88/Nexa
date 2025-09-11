@@ -1,44 +1,39 @@
-/**
- * Authentication types for NocoBase integration
- */
+import type { User, Session } from '@supabase/supabase-js';
 
-export interface LoginCredentials {
-  username: string;
-  password: string;
-}
-
-export interface User {
+export type AuthUser = User & {
   id: string;
-  username: string;
   email?: string;
-  nickname?: string;
-  avatar?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+};
 
-export interface AuthToken {
-  token: string;
-  expires?: string;
-}
-
-export interface LoginResponse {
-  data: {
-    token: string;
-    user: User;
-  };
-}
+export type AuthSession = Session & {
+  user: AuthUser;
+};
 
 export interface AuthState {
-  isAuthenticated: boolean;
-  user: User | null;
-  token: string | null;
+  user: AuthUser | null;
+  session: AuthSession | null;
   isLoading: boolean;
-  error: string | null;
+  isInitialized: boolean;
 }
+
+export type AuthAction = 'signIn' | 'signUp' | 'signOut' | 'resetPassword';
 
 export interface AuthError {
   message: string;
-  code?: string;
   status?: number;
+}
+
+export interface SignInCredentials {
+  email: string;
+  password: string;
+}
+
+export interface SignUpCredentials {
+  email: string;
+  password: string;
+  fullName?: string;
+}
+
+export interface ResetPasswordCredentials {
+  email: string;
 }

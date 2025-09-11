@@ -4,8 +4,8 @@ import { classNames } from '~/utils/classNames';
 import { AssistantMessage } from './AssistantMessage';
 import { UserMessage } from './UserMessage';
 import { useLocation } from '@remix-run/react';
-import { db, chatId } from '~/lib/persistence/useChatHistory';
-import { forkChat } from '~/lib/persistence/db';
+
+// Removed unused import: chatId
 import { toast } from 'react-toastify';
 import { useStore } from '@nanostores/react';
 import { profileStore } from '~/lib/stores/profile';
@@ -31,18 +31,12 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
       window.location.search = searchParams.toString();
     };
 
-    const handleFork = async (messageId: string) => {
-      try {
-        if (!db || !chatId.get()) {
-          toast.error('Chat persistence is not available');
-          return;
-        }
-
-        const urlId = await forkChat(db, chatId.get()!, messageId);
-        window.location.href = `/chat/${urlId}`;
-      } catch (error) {
-        toast.error('Failed to fork chat: ' + (error as Error).message);
-      }
+    const handleFork = async (_messageId: string) => {
+      /*
+       * Fork functionality disabled in project-based system
+       * TODO: Implement project forking if needed
+       */
+      toast.info('Fork functionality is not available in project-based chats');
     };
 
     return (

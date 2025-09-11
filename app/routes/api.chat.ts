@@ -6,7 +6,8 @@ import { streamText, type Messages, type StreamingOptions } from '~/lib/.server/
 import SwitchableStream from '~/lib/.server/llm/switchable-stream';
 import type { IProviderSetting } from '~/types/model';
 import { createScopedLogger } from '~/utils/logger';
-import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
+import { getFilePaths } from '~/lib/.server/llm/select-context';
+import { selectContextSmart } from '~/lib/.server/llm/context-selector';
 import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
 import { WORK_DIR } from '~/utils/constants';
 import { createSummary } from '~/lib/.server/llm/create-summary';
@@ -37,11 +38,12 @@ function parseCookies(cookieHeader: string): Record<string, string> {
 }
 
 async function chatAction({ context, request }: ActionFunctionArgs) {
-  const { messages, files, promptId, contextOptimization, supabase } = await request.json<{
+  const { messages, files, promptId, contextOptimization, supabase, hasWorkbench } = await request.json<{
     messages: Messages;
     files: any;
     promptId?: string;
     contextOptimization: boolean;
+    hasWorkbench?: boolean;
     supabase?: {
       isConnected: boolean;
       hasSelectedProject: boolean;
@@ -138,9 +140,18 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             message: 'Determining Files to Read',
           } satisfies ProgressAnnotation);
 
-          // Select context files
+          // Select context files using smart selector that respects workbench state
           console.log(`Messages count: ${messages.length}`);
-          filteredFiles = await selectContext({
+
+          // Create Supabase client if credentials are available
+          let supabaseClient = null;
+
+          if (supabase?.isConnected && supabase?.credentials?.supabaseUrl && supabase?.credentials?.anonKey) {
+            const { createClient } = await import('@supabase/supabase-js');
+            supabaseClient = createClient(supabase.credentials.supabaseUrl, supabase.credentials.anonKey);
+          }
+
+          filteredFiles = await selectContextSmart({
             messages: [...messages],
             env: context.cloudflare?.env,
             apiKeys,
@@ -149,6 +160,9 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             promptId,
             contextOptimization,
             summary,
+            hasWorkbench: Boolean(hasWorkbench),
+            projectId: 'current-project', // TODO: Get actual project ID from session
+            supabaseClient,
             onFinish(resp) {
               if (resp.usage) {
                 logger.debug('selectContext token usage', JSON.stringify(resp.usage));
